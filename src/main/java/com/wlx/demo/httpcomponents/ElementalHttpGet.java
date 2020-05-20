@@ -29,11 +29,14 @@ package com.wlx.demo.httpcomponents;
 
 import java.net.Socket;
 
+import com.wlx.demo.utils.ElementUtils;
 import org.apache.http.ConnectionReuseStrategy;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.DefaultBHttpClientConnection;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.protocol.HttpProcessor;
@@ -62,7 +65,7 @@ public class ElementalHttpGet {
         HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
 
         HttpCoreContext coreContext = HttpCoreContext.create();
-        HttpHost host = new HttpHost("localhost", 8080);
+        HttpHost host = new HttpHost("www.baidu.com", 80);
         coreContext.setTargetHost(host);
 
         DefaultBHttpClientConnection conn = new DefaultBHttpClientConnection(8 * 1024);
@@ -71,9 +74,7 @@ public class ElementalHttpGet {
         try {
 
             String[] targets = {
-                    "/",
-                    "/servlets-examples/servlet/RequestInfoExample",
-                    "/somewhere%20in%20pampa"};
+                    "/"};
 
             for (int i = 0; i < targets.length; i++) {
                 if (!conn.isOpen()) {
@@ -82,13 +83,25 @@ public class ElementalHttpGet {
                 }
                 BasicHttpRequest request = new BasicHttpRequest("GET", targets[i]);
                 System.out.println(">> Request URI: " + request.getRequestLine().getUri());
+//                request.addHeader("Accept", "application/json,text/javascript,*/*; q=0.01");
+//                request.addHeader("Accept-Encoding", "gzip, deflate, br");
+//                request.addHeader("Accept-Language", "zh-CN,zh;q=0.9");
+                request.addHeader("Content-Type", "text/plain;charset=UTF-8");
+                request.addHeader("Content-Encoding", "UTF-8");
 
                 httpexecutor.preProcess(request, httpproc, coreContext);
                 HttpResponse response = httpexecutor.execute(request, conn, coreContext);
                 httpexecutor.postProcess(response, httpproc, coreContext);
+                HttpEntity entity = response.getEntity();
 
                 System.out.println("<< Response: " + response.getStatusLine());
-                System.out.println(EntityUtils.toString(response.getEntity()));
+                System.out.println("<< Response: " + response.getLocale().getLanguage());
+                System.out.println("<< HttpEntity: " + entity.getContentLength());
+                System.out.println("<< HttpEntity: " + ElementUtils.toString(entity.getContentEncoding().getElements()));
+                System.out.println("<< HttpEntity: " + ElementUtils.toString(entity.getContentType().getElements()));
+
+
+                System.out.println(EntityUtils.toString(entity));
                 System.out.println("==============");
                 if (!connStrategy.keepAlive(response, coreContext)) {
                     conn.close();
