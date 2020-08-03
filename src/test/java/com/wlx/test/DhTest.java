@@ -43,17 +43,17 @@ public class DhTest {
         System.out.println("230 - 260 的次数：" + type[3]);
         System.out.println("260 - 300 的次数：" + type[4]);
         System.out.println("300+ 的次数：" + type[5]);
-
-        File file = new File("C:\\Users\\weilx\\Desktop\\roll.txt");
-
-        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"), 1024)) {
-            for (int i=0; i<data.size(); i++) {
-                String msg = (1 + i) + "\t" + data.get(i) + "\n";
-                bw.write(msg);
-            }
-            bw.flush();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//
+//        File file = new File("C:\\Users\\weilx\\Desktop\\roll.txt");
+//
+//        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"), 1024)) {
+//            for (int i=0; i<data.size(); i++) {
+//                String msg = (1 + i) + "\t" + data.get(i) + "\n";
+//                bw.write(msg);
+//            }
+//            bw.flush();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 }
