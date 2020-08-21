@@ -2,13 +2,13 @@ package com.wlx.demo.io;
 
 import com.wlx.demo.utils.NumberUtils;
 import com.wlx.demo.utils.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 
 public class FileChapterSpliter {
-    private transient static final Log log = LogFactory.getLog(FileChapterSpliter.class);
+    private transient final static Logger log = LogManager.getLogger(FileChapterSpliter.class);
 
 
     public static void main(String[] args) {

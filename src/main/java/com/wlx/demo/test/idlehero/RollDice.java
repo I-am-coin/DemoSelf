@@ -1,13 +1,13 @@
 package com.wlx.demo.test.idlehero;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
 
 public class RollDice {
-    private transient static final Log log = LogFactory.getLog(RollDice.class);
+    private transient final static Logger log = LogManager.getLogger(RollDice.class);
     private static final Random random = new Random();
     private static final int maxScore = 5; // 星星屋最大价值
     private static final int pttzIndex = 4; // 普通骰子下标
