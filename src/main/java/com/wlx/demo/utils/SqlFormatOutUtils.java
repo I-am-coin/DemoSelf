@@ -29,7 +29,7 @@ public class SqlFormatOutUtils {
     private final static String COMMA = ", ";
     private final static String LINE_BREAK = "\n";
     private final static String END_WITH_ZERO = ".0";
-    public final static String DEFAULT_SCHEMA = "PROD";
+    private static String DEFAULT_SCHEMA = "PROD";
 
     private final static String DATE_FORMAT_ORACLE = "yyyy-mm-dd hh24:mi:ss";
     private final static SimpleDateFormat FORMAT_YYYYMMDDHHMMSS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -118,5 +118,13 @@ public class SqlFormatOutUtils {
             return SINGLE_QUOTATION_MARKS + bigDecimalStr + SINGLE_QUOTATION_MARKS;
         }
         return SINGLE_QUOTATION_MARKS + o.toString() + SINGLE_QUOTATION_MARKS;
+    }
+
+    public static String getDefaultSchema() {
+        return DEFAULT_SCHEMA;
+    }
+
+    public static void setDefaultSchema(String schema) {
+        DEFAULT_SCHEMA = schema;
     }
 }

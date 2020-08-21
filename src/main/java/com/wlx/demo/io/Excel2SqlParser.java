@@ -63,23 +63,24 @@ public class Excel2SqlParser {
         try (OutputStream outputStream = new FileOutputStream(outF);
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"), 512)) {
             // 遍历各个表
-            for (String tableName : tableNameList) {
-                if (StringUtils.isBlank(tableName)) {
+            for (String fullTableName : tableNameList) {
+                if (StringUtils.isBlank(fullTableName)) {
                     log.error("表名为空！");
                     continue;
                 }
-                String schema = SqlFormatOutUtils.DEFAULT_SCHEMA;
+                String schema = SqlFormatOutUtils.getDefaultSchema();
+                String tableName = fullTableName;
 
-                if (tableName.contains("\\.")) {
-                    schema = tableName.substring(0, tableName.indexOf("\\."));
-                    tableName = tableName.substring(tableName.indexOf("\\.") + 1, tableName.length());
+                if (fullTableName.contains("\\.")) {
+                    schema = fullTableName.substring(0, fullTableName.indexOf("\\."));
+                    tableName = fullTableName.substring(fullTableName.indexOf("\\.") + 1, fullTableName.length());
                 }
                 // 一个表的数据
-                List<Map<String, Object>> tableList = tableMap.get(tableName);
+                List<Map<String, Object>> tableList = tableMap.get(fullTableName);
                 // 主键
-                List<String> primaryKeys = primaryKeyMap.get(tableName);
+                List<String> primaryKeys = primaryKeyMap.get(fullTableName);
                 // 列
-                List<String> columns = columnMap.get(tableName);
+                List<String> columns = columnMap.get(fullTableName);
 
                 if (null == tableList || tableList.size() <= 0) {
                     log.error(tableName + " 表数据为空！");
