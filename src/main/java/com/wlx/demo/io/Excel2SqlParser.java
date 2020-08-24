@@ -1,6 +1,7 @@
 package com.wlx.demo.io;
 
 import com.alibaba.fastjson.JSONObject;
+import com.sun.istack.internal.NotNull;
 import com.wlx.demo.utils.SqlFormatOutUtils;
 import com.wlx.demo.utils.StringUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -22,8 +23,12 @@ import java.util.*;
 public class Excel2SqlParser {
     private transient final static Logger log = LogManager.getLogger(Excel2SqlParser.class);
 
+    public static void prepareProdSql(@NotNull String filePath) throws Exception {
+        prepareProdSql(filePath, SqlFormatOutUtils.getDefaultSchema());
+    }
+
     @SuppressWarnings("unchecked")
-    public static void prepareProdSql(String filePath) throws Exception {
+    public static void prepareProdSql(@NotNull String filePath, @NotNull String schema) throws Exception {
         if (StringUtils.isBlank(filePath)) {
             return;
         }
@@ -39,6 +44,8 @@ public class Excel2SqlParser {
         Map<String, List<Map<String, Object>>> tableMap = null;
 
         try(InputStream inputStream = new FileInputStream(f)) {
+            // 修改默认库名
+            SqlFormatOutUtils.setDefaultSchema(schema);
             excelMap = prepareExcelContentX(inputStream);
 
             if (MapUtils.isEmpty(excelMap)) {
@@ -58,7 +65,8 @@ public class Excel2SqlParser {
         }
 
         log.error(JSONObject.toJSONString(tableMap));
-        File outF = new File(filePath.substring(0, filePath.lastIndexOf("\\")) + File.separator + "ExcelExport.sql");
+        File outF = new File(filePath.substring(0, filePath.lastIndexOf("\\")) + File.separator
+                + "ExcelExport_" + StringUtils.removeEnd(f.getName(), ".xlsx") +".sql");
 
         try (OutputStream outputStream = new FileOutputStream(outF);
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"), 512)) {
@@ -68,12 +76,11 @@ public class Excel2SqlParser {
                     log.error("表名为空！");
                     continue;
                 }
-                String schema = SqlFormatOutUtils.getDefaultSchema();
                 String tableName = fullTableName;
 
-                if (fullTableName.contains("\\.")) {
-                    schema = fullTableName.substring(0, fullTableName.indexOf("\\."));
-                    tableName = fullTableName.substring(fullTableName.indexOf("\\.") + 1, fullTableName.length());
+                if (fullTableName.contains(".")) {
+                    schema = fullTableName.substring(0, fullTableName.indexOf("."));
+                    tableName = fullTableName.substring(fullTableName.indexOf(".") + 1, fullTableName.length());
                 }
                 // 一个表的数据
                 List<Map<String, Object>> tableList = tableMap.get(fullTableName);
@@ -146,8 +153,6 @@ public class Excel2SqlParser {
             // 标题（列名）
             List<String> columnList = null;
             List<String> primaryKeyList = null;
-            // 数据
-            Map<String, Object> rowMap = new HashMap<>(rowNum);
             // 标题行的偏移量
             short offset = 0;
 
@@ -189,6 +194,8 @@ public class Excel2SqlParser {
                         log.error("sheet:" + sheet.getSheetName() + ", 未获取到列名/主键，过滤当前sheet数据，请检查");
                         continue;
                     }
+                    // 数据
+                    Map<String, Object> rowMap = new HashMap<>(rowNum);
                     // 偏移 offset 个单元格
                     int length = columnList.size() + offset;
 

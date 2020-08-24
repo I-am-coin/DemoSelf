@@ -3,8 +3,10 @@ package com.wlx.demo.utils;
 import com.sun.istack.internal.NotNull;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -29,10 +31,11 @@ public class SqlFormatOutUtils {
     private final static String COMMA = ", ";
     private final static String LINE_BREAK = "\n";
     private final static String END_WITH_ZERO = ".0";
-    private static String DEFAULT_SCHEMA = "PROD";
+    private static String DEFAULT_SCHEMA = "PRODUCT";
 
     private final static String DATE_FORMAT_ORACLE = "yyyy-mm-dd hh24:mi:ss";
     private final static SimpleDateFormat FORMAT_YYYYMMDDHHMMSS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private final static NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.getDefault());
 
     public static String preparedSql(String schema, @NotNull String tableName, @NotNull String[] primaryKeys,
                                      @NotNull String[] columns, @NotNull Map<String, Object> valueMap) throws Exception {
@@ -109,15 +112,16 @@ public class SqlFormatOutUtils {
             return SYSDATE;
         }
         if (o instanceof Number) {
-            // 这一步转化防止使用科学计数法
-            String bigDecimalStr = new BigDecimal(o.toString()).toString();
-
-            if (bigDecimalStr.endsWith(END_WITH_ZERO)) {
-                return SINGLE_QUOTATION_MARKS +StringUtils.removeEnd(bigDecimalStr, END_WITH_ZERO) + SINGLE_QUOTATION_MARKS;
-            }
-            return SINGLE_QUOTATION_MARKS + bigDecimalStr + SINGLE_QUOTATION_MARKS;
+            return SINGLE_QUOTATION_MARKS + NUMBER_FORMAT.format(o) + SINGLE_QUOTATION_MARKS;
         }
-        return SINGLE_QUOTATION_MARKS + o.toString() + SINGLE_QUOTATION_MARKS;
+        String sValue = SINGLE_QUOTATION_MARKS + o.toString() + SINGLE_QUOTATION_MARKS;
+
+        // 部分符号特殊处理
+        if (sValue.contains("&")) {
+            sValue = sValue.replaceAll("&", "'||'&'||'");
+        }
+
+        return sValue;
     }
 
     public static String getDefaultSchema() {
@@ -126,5 +130,9 @@ public class SqlFormatOutUtils {
 
     public static void setDefaultSchema(String schema) {
         DEFAULT_SCHEMA = schema;
+    }
+
+    static {
+        NUMBER_FORMAT.setGroupingUsed(false);
     }
 }
