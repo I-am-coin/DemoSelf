@@ -69,7 +69,7 @@ public class Excel2SqlParser {
                 + "ExcelExport_" + StringUtils.removeEnd(f.getName(), ".xlsx") +".sql");
 
         try (OutputStream outputStream = new FileOutputStream(outF);
-             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"), 512)) {
+             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"), 2048)) {
             // 遍历各个表
             for (String fullTableName : tableNameList) {
                 if (StringUtils.isBlank(fullTableName)) {

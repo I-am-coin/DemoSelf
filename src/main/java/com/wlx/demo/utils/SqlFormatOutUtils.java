@@ -31,11 +31,13 @@ public class SqlFormatOutUtils {
     private final static String COMMA = ", ";
     private final static String LINE_BREAK = "\n";
     private final static String END_WITH_ZERO = ".0";
-    private static String DEFAULT_SCHEMA = "PRODUCT";
 
     private final static String DATE_FORMAT_ORACLE = "yyyy-mm-dd hh24:mi:ss";
     private final static SimpleDateFormat FORMAT_YYYYMMDDHHMMSS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private final static NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance(Locale.getDefault());
+
+    private static String DEFAULT_SCHEMA = "PRODUCT";
+    private static String LAST_WHERE_SQL = "";
 
     public static String preparedSql(String schema, @NotNull String tableName, @NotNull String[] primaryKeys,
                                      @NotNull String[] columns, @NotNull Map<String, Object> valueMap) throws Exception {
@@ -72,8 +74,14 @@ public class SqlFormatOutUtils {
         if (StringUtils.isBlank(where.toString())) {
             throw new IllegalArgumentException("primary key is invalid");
         }
-        // DELETE 语句结束
-        sql.append(where).append(SEMICOLON).append(LINE_BREAK);
+        // 判断WHERE条件是否与上一条相同，是则忽略本条DELETE语句
+        if (LAST_WHERE_SQL.equals(where.toString())) {
+            sql = new StringBuilder();
+        } else {
+            // DELETE 语句结束
+            sql.append(where).append(SEMICOLON).append(LINE_BREAK);
+        }
+        LAST_WHERE_SQL = where.toString();
         // INSERT 语句开始
         sql.append(INSERT_INTO).append(BLANK).append(schema).append(POINT).append(tableName).append(LEFT_PARENTHESES);
         StringBuilder column = new StringBuilder();
