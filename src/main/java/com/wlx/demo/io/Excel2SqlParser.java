@@ -108,7 +108,10 @@ public class Excel2SqlParser {
                     // 拼接SQL
                     String sql = SqlFormatOutUtils.preparedSql(schema, tableName,
                             primaryKeys.toArray(new String[0]), columns.toArray(new String[0]), tableData);
-                    log.error(sql);
+
+                    if (log.isDebugEnabled()) {
+                        log.debug(sql);
+                    }
                     // 保存
                     bw.write(sql);
                     bw.newLine();

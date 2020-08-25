@@ -19,17 +19,17 @@ public class IOTest {
 
     @Test
     public void testDouble() throws Exception {
-        System.out.println("BigDecimal.valueOf(654321234567890.0) = " + BigDecimal.valueOf(654321234567890.0));
-        System.out.println("new BigDecimal(654321234567890.0) = " + new BigDecimal(654321234567890.0));
-        System.out.println("new BigDecimal(\"654321234567890.0\") = " + new BigDecimal("654321234567890.0"));
-        System.out.println("new BigDecimal(((Double)654321234567890.0).toString()) = " + new BigDecimal(((Double)654321234567890.0).toString()));
+        log.info("BigDecimal.valueOf(654321234567890.0) = " + BigDecimal.valueOf(654321234567890.0));
+        log.info("new BigDecimal(654321234567890.0) = " + new BigDecimal(654321234567890.0));
+        log.info("new BigDecimal(\"654321234567890.0\") = " + new BigDecimal("654321234567890.0"));
+        log.info("new BigDecimal(((Double)654321234567890.0).toString()) = " + new BigDecimal(((Double)654321234567890.0).toString()));
 
-        System.out.println("\n");
+        log.info("\n");
 
-        System.out.println("BigDecimal.valueOf(654321234567891.0) = " + BigDecimal.valueOf(654321234567891.0));
-        System.out.println("new BigDecimal(654321234567891.0) = " + new BigDecimal(654321234567891.0));
-        System.out.println("new BigDecimal(\"654321234567891.0\") = " + new BigDecimal("654321234567891.0"));
-        System.out.println("new BigDecimal(((Double)654321234567891.0).toString()) = " + new BigDecimal(((Double)654321234567891.0).toString()));
+        log.info("BigDecimal.valueOf(654321234567891.0) = " + BigDecimal.valueOf(654321234567891.0));
+        log.info("new BigDecimal(654321234567891.0) = " + new BigDecimal(654321234567891.0));
+        log.info("new BigDecimal(\"654321234567891.0\") = " + new BigDecimal("654321234567891.0"));
+        log.info("new BigDecimal(((Double)654321234567891.0).toString()) = " + new BigDecimal(((Double)654321234567891.0).toString()));
     }
 
     @Test
@@ -37,17 +37,17 @@ public class IOTest {
         NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.getDefault());
         numberFormat.setGroupingUsed(false);
 
-        System.out.println(numberFormat.format(654321234567890.0));
-        System.out.println(numberFormat.format(654321234567891.0));
-        System.out.println(numberFormat.format(654321234567891.1));
+        log.info(numberFormat.format(654321234567890.0));
+        log.info(numberFormat.format(654321234567891.0));
+        log.info(numberFormat.format(654321234567891.1));
 
-        System.out.println(numberFormat.format((Double)654321234567890.0));
-        System.out.println(numberFormat.format((Double)654321234567891.0));
-        System.out.println(numberFormat.format((Double) 654321234567891.1));
+        log.info(numberFormat.format((Double)654321234567890.0));
+        log.info(numberFormat.format((Double)654321234567891.0));
+        log.info(numberFormat.format((Double) 654321234567891.1));
 
 
-        System.out.println(numberFormat.format((Object)654321234567890.0));
-        System.out.println(numberFormat.format((Object)654321234567891.0));
-        System.out.println(numberFormat.format((Object) 654321234567891.1));
+        log.info(numberFormat.format((Object)654321234567890.0));
+        log.info(numberFormat.format((Object)654321234567891.0));
+        log.info(numberFormat.format((Object) 654321234567891.1));
     }
 }
