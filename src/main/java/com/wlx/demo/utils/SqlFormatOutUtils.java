@@ -39,7 +39,7 @@ public class SqlFormatOutUtils {
     private static String DEFAULT_SCHEMA = "PRODUCT";
     private static String LAST_WHERE_SQL = "";
 
-    public static String preparedSql(String schema, @NotNull String tableName, @NotNull String[] primaryKeys,
+    public static String format2DeleteInsertSql(String schema, @NotNull String tableName, @NotNull String[] primaryKeys,
                                      @NotNull String[] columns, @NotNull Map<String, Object> valueMap) throws Exception {
         if (StringUtils.isBlank(schema)) {
             schema = DEFAULT_SCHEMA;

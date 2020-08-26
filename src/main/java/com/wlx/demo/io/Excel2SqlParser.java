@@ -106,7 +106,7 @@ public class Excel2SqlParser {
                 // 遍历保存表数据
                 for (Map<String, Object> tableData : tableList) {
                     // 拼接SQL
-                    String sql = SqlFormatOutUtils.preparedSql(schema, tableName,
+                    String sql = SqlFormatOutUtils.format2DeleteInsertSql(schema, tableName,
                             primaryKeys.toArray(new String[0]), columns.toArray(new String[0]), tableData);
 
                     if (log.isDebugEnabled()) {
