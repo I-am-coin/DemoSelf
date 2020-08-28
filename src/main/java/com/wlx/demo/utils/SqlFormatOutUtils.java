@@ -21,15 +21,24 @@ public class SqlFormatOutUtils {
     private final static String WHERE = "WHERE";
     private final static String AND = "AND";
     private final static String SYSDATE = "SYSDATE";
-    private final static String LEFT_PARENTHESES = "(";
-    private final static String RIGHT_PARENTHESES = ")";
-    private final static String SEMICOLON = ";";
-    private final static String POINT = ".";
-    private final static String BLANK = " ";
-    private final static String EQUALS = " = ";
-    private final static String SINGLE_QUOTATION_MARKS = "'";
-    private final static String COMMA = ", ";
-    private final static String LINE_BREAK = "\n";
+    private final static String DUAL = "DUAL";
+    private final static String SELECT = "SELECT";
+    private final static String FROM = "FROM";
+    private final static String COUNT = "COUNT";
+    private final static String AS = "AS";
+    public final static String UNION = "UNION";
+    public final static String ALL = "ALL";
+    private final static String DECODE = "DECODE";
+    public final static String ASTERISK = "*";
+    public final static String LEFT_PARENTHESES = "(";
+    public final static String RIGHT_PARENTHESES = ")";
+    public final static String SEMICOLON = ";";
+    public final static String POINT = ".";
+    public final static String BLANK = " ";
+    public final static String EQUALS = " = ";
+    public final static String SINGLE_QUOTATION_MARKS = "'";
+    public final static String COMMA = ", ";
+    public final static String LINE_BREAK = "\n";
     private final static String END_WITH_ZERO = ".0";
 
     private final static String DATE_FORMAT_ORACLE = "yyyy-mm-dd hh24:mi:ss";
@@ -38,7 +47,61 @@ public class SqlFormatOutUtils {
 
     private static String DEFAULT_SCHEMA = "PRODUCT";
     private static String LAST_WHERE_SQL = "";
+    public static String CHECK_NUMBER_STRING = "#{NUMBER}";
 
+    /**
+     * 拼装检查SQL
+     * @param schema 用户名
+     * @param tableName 表名
+     * @param primaryKeys 主键列表
+     * @param valueMap 值Map
+     * @param remark 备注
+     * @return 返回固定格式SQL语句：<br/>
+     * <p><code>
+     *     SELECT DECODE((SELECT COUNT(*) FROM <i>schema.tableName</i> WHERE <i>primaryKe</i> = <i>value</i>),
+     *     <i>count</i>, '正确', '错误') AS 稽核结果, <i>where</i> AS 条件, <i>remark</i> AS 需求编码 FROM DUAL;
+     * </code></p>
+     * @throws Exception 未定义异常
+     */
+    public static String formatCheckSql(String schema, @NotNull String tableName, @NotNull String[] primaryKeys,
+                                        @NotNull Map<String, Object> valueMap, String remark) throws Exception {
+        if (StringUtils.isBlank(schema)) {
+            schema = DEFAULT_SCHEMA;
+        }
+        StringBuilder sql = new StringBuilder(SELECT).append(BLANK).append(DECODE).append(LEFT_PARENTHESES)
+                .append(LEFT_PARENTHESES).append(SELECT).append(BLANK).append(COUNT).append(LEFT_PARENTHESES)
+                .append(ASTERISK).append(RIGHT_PARENTHESES).append(BLANK).append(FROM).append(BLANK).append(schema)
+                .append(POINT).append(tableName).append(BLANK).append(WHERE).append(BLANK);
+        StringBuilder where = getWhereSql(primaryKeys, valueMap);
+
+        if (StringUtils.isBlank(where.toString())) {
+            throw new IllegalArgumentException("primary key is invalid");
+        }
+        sql.append(where).append(RIGHT_PARENTHESES).append(COMMA).append(CHECK_NUMBER_STRING).append(COMMA)
+                .append("'正确'").append(COMMA).append("'错误'").append(RIGHT_PARENTHESES).append(BLANK)
+                .append(AS).append(BLANK).append("稽核结果").append(COMMA).append(SINGLE_QUOTATION_MARKS)
+                .append(where).append(SINGLE_QUOTATION_MARKS).append(BLANK).append(AS).append(BLANK)
+                .append("'条件'").append(COMMA).append(SINGLE_QUOTATION_MARKS).append(remark)
+                .append(SINGLE_QUOTATION_MARKS).append(BLANK).append(AS).append(BLANK).append("需求编码")
+                .append(BLANK).append(FROM).append(BLANK).append(DUAL).append(SEMICOLON).append(LINE_BREAK);
+
+        return sql.toString();
+    }
+
+    /**
+     * 拼装DELETE&INSERT语句
+     * @param schema 用户名
+     * @param tableName 表名
+     * @param primaryKeys 主键列表
+     * @param columns 列
+     * @param valueMap 值Map
+     * @return
+     * <p><code>
+     *     DELETE FROM <i>schema.tableName</i> WHERE <i>primaryKey</i> = <i>value</i>;<br />
+     *     INSERT INTO <i>schema.tableName</i>(<i>columns</i>) VALUES(<i>values</i>);
+     * </code></p>
+     * @throws Exception 未定义异常
+     */
     public static String format2DeleteInsertSql(String schema, @NotNull String tableName, @NotNull String[] primaryKeys,
                                      @NotNull String[] columns, @NotNull Map<String, Object> valueMap) throws Exception {
         if (StringUtils.isBlank(schema)) {
@@ -47,30 +110,8 @@ public class SqlFormatOutUtils {
         // DELETE 语句开始
         StringBuilder sql = new StringBuilder(DELETE_FROM).append(BLANK).append(schema).append(POINT).append(tableName)
                 .append(BLANK).append(WHERE).append(BLANK);
-        StringBuilder where = new StringBuilder();
+        StringBuilder where = getWhereSql(primaryKeys, valueMap);
 
-        // 遍历主键设置 WHERE 条件
-        for (String pKey : primaryKeys) {
-            if (StringUtils.isBlank(pKey)) {
-                continue;
-            }
-            if (StringUtils.isNotBlank(where.toString())) {
-                where.append(BLANK).append(AND).append(BLANK);
-            }
-            where.append(pKey.toUpperCase());
-
-            if (valueMap.get(pKey) == null) {
-                where.append("IS NULL");
-            } else {
-                String formatValue = getFormatValue(valueMap.get(pKey));
-
-                if ("NULL".equalsIgnoreCase(formatValue)) {
-                    where.append("IS NULL");
-                } else {
-                    where.append(EQUALS).append(formatValue);
-                }
-            }
-        }
         if (StringUtils.isBlank(where.toString())) {
             throw new IllegalArgumentException("primary key is invalid");
         }
@@ -106,6 +147,35 @@ public class SqlFormatOutUtils {
         sql.append(column).append(RIGHT_PARENTHESES).append(LINE_BREAK).append(VALUES).append(LEFT_PARENTHESES)
                 .append(values).append(RIGHT_PARENTHESES).append(SEMICOLON).append(LINE_BREAK);
         return sql.toString();
+    }
+
+    private static StringBuilder getWhereSql(String[] primaryKeys, Map<String, Object> valueMap) throws Exception {
+        StringBuilder where = new StringBuilder();
+
+        // 遍历主键设置 WHERE 条件
+        for (String pKey : primaryKeys) {
+            if (StringUtils.isBlank(pKey)) {
+                continue;
+            }
+            if (StringUtils.isNotBlank(where.toString())) {
+                where.append(BLANK).append(AND).append(BLANK);
+            }
+            where.append(pKey.toUpperCase());
+
+            if (valueMap.get(pKey) == null) {
+                where.append("IS NULL");
+            } else {
+                String formatValue = getFormatValue(valueMap.get(pKey));
+
+                if ("NULL".equalsIgnoreCase(formatValue)) {
+                    where.append("IS NULL");
+                } else {
+                    where.append(EQUALS).append(formatValue);
+                }
+            }
+        }
+
+        return where;
     }
 
     private static String getFormatValue(Object o) throws Exception {

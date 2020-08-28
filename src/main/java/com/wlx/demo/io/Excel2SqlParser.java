@@ -7,11 +7,9 @@ import com.wlx.demo.utils.StringUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.DateUtil;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.WorkbookUtil;
+import org.apache.poi.xssf.usermodel.*;
 
 import java.io.*;
 import java.util.*;
@@ -23,12 +21,12 @@ import java.util.*;
 public class Excel2SqlParser {
     private transient final static Logger log = LogManager.getLogger(Excel2SqlParser.class);
 
-    public static void prepareProdSql(@NotNull String filePath) throws Exception {
-        prepareProdSql(filePath, SqlFormatOutUtils.getDefaultSchema());
+    public static void parseSql(@NotNull String filePath, String remark) throws Exception {
+        parseSql(filePath, SqlFormatOutUtils.getDefaultSchema(), remark);
     }
 
     @SuppressWarnings("unchecked")
-    public static void prepareProdSql(@NotNull String filePath, @NotNull String schema) throws Exception {
+    public static void parseSql(@NotNull String filePath, @NotNull String schema, String remark) throws Exception {
         if (StringUtils.isBlank(filePath)) {
             return;
         }
@@ -65,8 +63,15 @@ public class Excel2SqlParser {
         }
 
         log.error(JSONObject.toJSONString(tableMap));
-        File outF = new File(filePath.substring(0, filePath.lastIndexOf("\\")) + File.separator
-                + "ExcelExport_" + StringUtils.removeEnd(f.getName(), ".xlsx") +".sql");
+        print2File(filePath.substring(0, filePath.lastIndexOf("\\")) + File.separator
+                + "ExcelExport_" + StringUtils.removeEnd(f.getName(), ".xlsx") +".sql",
+                tableNameList, schema, primaryKeyMap, columnMap, tableMap, remark);
+    }
+
+    private static void print2File(String filePath, List<String> tableNameList, String schema,
+                                   Map<String, List<String>> primaryKeyMap, Map<String, List<String>> columnMap,
+                                   Map<String, List<Map<String, Object>>> tableMap, String remark) {
+        File outF = new File(filePath);
 
         try (OutputStream outputStream = new FileOutputStream(outF);
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"), 2048)) {
@@ -112,14 +117,83 @@ public class Excel2SqlParser {
                     if (log.isDebugEnabled()) {
                         log.debug(sql);
                     }
-                    // 保存
-                    bw.write(sql);
-                    bw.newLine();
+                    if (StringUtils.isNotBlank(sql)) {
+                        // 保存
+                        bw.write(sql);
+                        bw.newLine();
+                    }
                 }
                 bw.flush();
             }
         } catch (Exception e) {
-            log.error(e);
+            log.error("数据格式化异常：", e);
+        }
+    }
+
+    private static void printCheckSql2Excel(String filePath, List<String> tableNameList,
+                                            Map<String, List<String>> formatSqlMap, Map<String, List<String>> checkSqlMap) throws Exception {
+        XSSFWorkbook checkExcelWorkBook = new XSSFWorkbook();
+        // 创建一个 Sheet 页，名字为 CHECK_SQL
+        XSSFSheet checkSqlSheet = checkExcelWorkBook.createSheet(WorkbookUtil.createSafeSheetName("CHECK_SQL"));
+        // 设置列宽
+        checkSqlSheet.setColumnWidth(0, 21 * 256);
+        checkSqlSheet.setColumnWidth(1, 90 * 256);
+        checkSqlSheet.setColumnWidth(2, 90 * 256);
+        XSSFCreationHelper creationHelper = checkExcelWorkBook.getCreationHelper();
+        // 第一行标题
+        XSSFRow titleRow = checkSqlSheet.createRow(0);
+        titleRow.setHeightInPoints(15);
+        // 标题样式
+        XSSFCellStyle titleStyle = checkExcelWorkBook.createCellStyle();
+        titleStyle.setAlignment(HorizontalAlignment.CENTER);
+        titleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        XSSFFont titleFont = checkExcelWorkBook.createFont();
+        titleFont.setBold(true);
+        titleFont.setFontName("微软雅黑");
+        titleFont.setFontHeightInPoints((short)10);
+
+        titleStyle.setFont(titleFont);
+        // 设置标题
+        XSSFCell titleTableNameCell = titleRow.createCell(0, CellType.STRING);
+        titleTableNameCell.setCellValue("TABLE_NAME");
+        titleTableNameCell.setCellStyle(titleStyle);
+        XSSFCell titleSqlCell = titleRow.createCell(1, CellType.STRING);
+        titleSqlCell.setCellValue("FORMAT_SQL");
+        titleSqlCell.setCellStyle(titleStyle);
+        XSSFCell titleCheckSqlCell = titleRow.createCell(2, CellType.STRING);
+        titleCheckSqlCell.setCellValue("CHECK_SQL");
+        titleCheckSqlCell.setCellStyle(titleStyle);
+        // 内容样式
+        XSSFCellStyle contentStyle = checkExcelWorkBook.createCellStyle();
+        contentStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        contentStyle.setWrapText(true);
+        XSSFFont contentFont = checkExcelWorkBook.createFont();
+        contentFont.setFontName("微软雅黑");
+        contentFont.setFontHeightInPoints((short)10);
+        contentStyle.setFont(contentFont);
+        int k = 1;
+
+        for (int i = 0; i < tableNameList.size(); i++) {
+            for (int j = 0; j < checkSqlMap.get(tableNameList.get(i)).size(); j++) {
+                // 填充每一行的内容
+                XSSFRow row = checkSqlSheet.createRow(k++);
+                row.setHeightInPoints(15);
+                XSSFCell cell1 = row.createCell(0);
+                cell1.setCellStyle(contentStyle);
+                cell1.setCellValue(tableNameList.get(i));
+                XSSFCell cell2 = row.createCell(1);
+                cell2.setCellStyle(contentStyle);
+                cell2.setCellValue(creationHelper.createRichTextString(formatSqlMap.get(tableNameList.get(i)).get(j)));
+                XSSFCell cell3 = row.createCell(2);
+                cell3.setCellStyle(contentStyle);
+                cell3.setCellValue(creationHelper.createRichTextString(checkSqlMap.get(tableNameList.get(i)).get(j)));
+            }
+        }
+        // excel 内容拼装完成， 保存
+        try (OutputStream outputStream = new FileOutputStream(filePath)) {
+            checkExcelWorkBook.write(outputStream);
+        } catch (Exception e) {
+            log.error("保存检查脚本异常：", e);
         }
     }
 
