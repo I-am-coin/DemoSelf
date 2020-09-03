@@ -134,7 +134,7 @@ public class Excel2SqlParser {
                             record = 1;
                         }
                         // 如果是新的一个表，则将 checkSqlList 放入
-                        if (StringUtils.isNotBlank(lastTableName) && !StringUtils.equals(lastTableName, tableName)) {
+                        if (StringUtils.isNotBlank(lastTableName) && !StringUtils.equals(lastTableName, schema + SqlFormatOutUtils.POINT + tableName)) {
                             checkSqlMap.put(lastTableName, checkSqlList);
                             formatSqlMap.put(lastTableName, formatSqlList);
                             formatSqlList = new ArrayList<>();
@@ -150,7 +150,7 @@ public class Excel2SqlParser {
                         record++;
                     }
                     sqlBuilder.append(sql).append(SqlFormatOutUtils.LINE_BREAK);
-                    lastTableName = tableName;
+                    lastTableName = schema + SqlFormatOutUtils.POINT + tableName;
                     if (LOG.isDebugEnabled()) {
                         LOG.debug(sql);
                     }
@@ -163,7 +163,7 @@ public class Excel2SqlParser {
                 bw.flush();
             }
             // 最后一个
-            String lastSql = StringUtils.removeEnd(checkSqlList.get(checkSqlList.size() - 1), " UNION ALL");
+            String lastSql = checkSqlList.get(checkSqlList.size() - 1);
             checkSqlList.remove(checkSqlList.size() - 1);
             checkSqlList.add(lastSql.replaceAll("#\\{NUMBER}",
                     String.valueOf(record)));
@@ -183,15 +183,15 @@ public class Excel2SqlParser {
             }
             printCheckSql2Excel(filePath.substring(0, filePath.lastIndexOf("\\")) + File.separator
                     + "CheckSql_" + StringUtils.removeEnd(outF.getName(), ".sql") +".xlsx",
-                    tableNameList, formatSqlMap, checkSqlMap);
+                    formatSqlMap, checkSqlMap);
         } catch (Exception e) {
             LOG.error("检查脚本文件生成失败：", e);
         }
         LOG.error("检查脚本生成结束……");
     }
 
-    private static void printCheckSql2Excel(String filePath, List<String> tableNameList,
-                                            Map<String, List<String>> formatSqlMap, Map<String, List<String>> checkSqlMap) throws Exception {
+    private static void printCheckSql2Excel(String filePath, Map<String, List<String>> formatSqlMap,
+                                            Map<String, List<String>> checkSqlMap) throws Exception {
         XSSFWorkbook checkExcelWorkBook = new XSSFWorkbook();
         // 创建一个 Sheet 页，名字为 CHECK_SQL
         XSSFSheet checkSqlSheet = checkExcelWorkBook.createSheet(WorkbookUtil.createSafeSheetName("CHECK_SQL"));
@@ -233,20 +233,24 @@ public class Excel2SqlParser {
         contentStyle.setFont(contentFont);
         int k = 1;
 
-        for (int i = 0; i < tableNameList.size(); i++) {
-            for (int j = 0; j < checkSqlMap.get(tableNameList.get(i)).size(); j++) {
+        for (String tableName : checkSqlMap.keySet()) {
+            if (null == checkSqlMap.get(tableName)) {
+                LOG.error("检查脚本表数据为空：" + tableName);
+                continue;
+            }
+            for (int j = 0; j < checkSqlMap.get(tableName).size(); j++) {
                 // 填充每一行的内容
                 XSSFRow row = checkSqlSheet.createRow(k++);
                 row.setHeightInPoints(15);
                 XSSFCell cell1 = row.createCell(0);
                 cell1.setCellStyle(contentStyle);
-                cell1.setCellValue(tableNameList.get(i));
+                cell1.setCellValue(tableName);
                 XSSFCell cell2 = row.createCell(1);
                 cell2.setCellStyle(contentStyle);
-                cell2.setCellValue(creationHelper.createRichTextString(formatSqlMap.get(tableNameList.get(i)).get(j)));
+                cell2.setCellValue(creationHelper.createRichTextString(formatSqlMap.get(tableName).get(j)));
                 XSSFCell cell3 = row.createCell(2);
                 cell3.setCellStyle(contentStyle);
-                cell3.setCellValue(creationHelper.createRichTextString(checkSqlMap.get(tableNameList.get(i)).get(j)));
+                cell3.setCellValue(creationHelper.createRichTextString(checkSqlMap.get(tableName).get(j)));
             }
         }
         // excel 内容拼装完成， 保存
