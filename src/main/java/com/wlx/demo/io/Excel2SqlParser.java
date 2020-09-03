@@ -19,7 +19,7 @@ import java.util.*;
  * @author weilx
  */
 public class Excel2SqlParser {
-    private transient final static Logger log = LogManager.getLogger(Excel2SqlParser.class);
+    private transient final static Logger LOG = LogManager.getLogger(Excel2SqlParser.class);
 
     public static void parseSql(@NotNull String filePath, String remark) throws Exception {
         parseSql(filePath, SqlFormatOutUtils.getDefaultSchema(), remark);
@@ -54,15 +54,15 @@ public class Excel2SqlParser {
             columnMap = (Map<String, List<String>>)excelMap.get("COLUMNS");
             tableMap = (Map<String, List<Map<String, Object>>>) excelMap.get("TABLE_DATA");
         } catch (Exception e) {
-            log.error("解析EXCEL出错：", e);
+            LOG.error("解析EXCEL出错：", e);
         }
         if (null == tableNameList || tableNameList.size() < 1 || MapUtils.isEmpty(primaryKeyMap)
                 || MapUtils.isEmpty(columnMap) || MapUtils.isEmpty(tableMap)) {
-            log.error("Excel文件解析数据为空，程序结束");;
+            LOG.error("Excel文件解析数据为空，程序结束");;
             return;
         }
 
-        log.error(JSONObject.toJSONString(tableMap));
+        LOG.error(JSONObject.toJSONString(tableMap));
         print2File(filePath.substring(0, filePath.lastIndexOf("\\")) + File.separator
                 + "ExcelExport_" + StringUtils.removeEnd(f.getName(), ".xlsx") +".sql",
                 tableNameList, schema, primaryKeyMap, columnMap, tableMap, remark);
@@ -72,13 +72,20 @@ public class Excel2SqlParser {
                                    Map<String, List<String>> primaryKeyMap, Map<String, List<String>> columnMap,
                                    Map<String, List<Map<String, Object>>> tableMap, String remark) {
         File outF = new File(filePath);
+        int record = 1;
+        Map<String, List<String>> formatSqlMap = new HashMap<>(tableNameList.size());
+        Map<String, List<String>> checkSqlMap = new HashMap<>(tableNameList.size());
+        List<String> checkSqlList = new ArrayList<>();
+        List<String> formatSqlList = new ArrayList<>();
+        StringBuilder sqlBuilder = new StringBuilder();
+        String lastTableName = StringUtils.EMPTY;
 
         try (OutputStream outputStream = new FileOutputStream(outF);
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"), 2048)) {
             // 遍历各个表
             for (String fullTableName : tableNameList) {
                 if (StringUtils.isBlank(fullTableName)) {
-                    log.error("表名为空！");
+                    LOG.error("表名为空！");
                     continue;
                 }
                 String tableName = fullTableName;
@@ -95,15 +102,15 @@ public class Excel2SqlParser {
                 List<String> columns = columnMap.get(fullTableName);
 
                 if (null == tableList || tableList.size() <= 0) {
-                    log.error(tableName + " 表数据为空！");
+                    LOG.error(tableName + " 表数据为空！");
                     continue;
                 }
                 if (null == primaryKeys || primaryKeys.size() <= 0) {
-                    log.error(tableName + " 未设置主键！");
+                    LOG.error(tableName + " 未设置主键！");
                     continue;
                 }
                 if (null == columns || columns.size() <= 0) {
-                    log.error(tableName + " 未获取到列！");
+                    LOG.error(tableName + " 未获取到列！");
                     continue;
                 }
                 bw.write("-- " + schema + "."+ tableName);
@@ -114,8 +121,38 @@ public class Excel2SqlParser {
                     String sql = SqlFormatOutUtils.format2DeleteInsertSql(schema, tableName,
                             primaryKeys.toArray(new String[0]), columns.toArray(new String[0]), tableData);
 
-                    if (log.isDebugEnabled()) {
-                        log.debug(sql);
+                    // 如果 sql 包含 DELETE FROM 语句，则生成检查语句，否则 record++
+                    if (sql.contains(SqlFormatOutUtils.DELETE_FROM)) {
+                        if (checkSqlList.size() > 0) {
+                            // 从 checkSqlList 中取出最后一条记录，替换 CHECK_NUMBER_STRING 为真实值
+                            String lastSql = checkSqlList.get(checkSqlList.size() - 1);
+                            checkSqlList.remove(checkSqlList.size() - 1);
+                            checkSqlList.add(lastSql.replaceAll("#\\{NUMBER}",
+                                    String.valueOf(record)));
+                            formatSqlList.add(sqlBuilder.toString());
+                            sqlBuilder.delete(0, sqlBuilder.length());
+                            record = 1;
+                        }
+                        // 如果是新的一个表，则将 checkSqlList 放入
+                        if (StringUtils.isNotBlank(lastTableName) && !StringUtils.equals(lastTableName, tableName)) {
+                            checkSqlMap.put(lastTableName, checkSqlList);
+                            formatSqlMap.put(lastTableName, formatSqlList);
+                            formatSqlList = new ArrayList<>();
+                            checkSqlList = new ArrayList<>();
+                        }
+                        // 生成检查脚本
+                        String checkSql = SqlFormatOutUtils.formatCheckSql(schema, tableName,
+                                primaryKeys.toArray(new String[0]), tableData, remark);
+                        checkSqlList.add(StringUtils.removeEnd(checkSql, SqlFormatOutUtils.SEMICOLON)
+                                + SqlFormatOutUtils.BLANK + SqlFormatOutUtils.UNION
+                                + SqlFormatOutUtils.BLANK + SqlFormatOutUtils.ALL);
+                    } else {
+                        record++;
+                    }
+                    sqlBuilder.append(sql).append(SqlFormatOutUtils.LINE_BREAK);
+                    lastTableName = tableName;
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(sql);
                     }
                     if (StringUtils.isNotBlank(sql)) {
                         // 保存
@@ -125,9 +162,32 @@ public class Excel2SqlParser {
                 }
                 bw.flush();
             }
+            // 最后一个
+            String lastSql = StringUtils.removeEnd(checkSqlList.get(checkSqlList.size() - 1), " UNION ALL");
+            checkSqlList.remove(checkSqlList.size() - 1);
+            checkSqlList.add(lastSql.replaceAll("#\\{NUMBER}",
+                    String.valueOf(record)));
+            formatSqlList.add(sqlBuilder.toString());
+            checkSqlMap.put(lastTableName, checkSqlList);
+            formatSqlMap.put(lastTableName, formatSqlList);
         } catch (Exception e) {
-            log.error("数据格式化异常：", e);
+            LOG.error("数据格式化异常：", e);
         }
+
+        // 生产检查脚本文件
+        try {
+            LOG.error("检查脚本生成开始……");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("CHECK_SQL_MAP: " + JSONObject.toJSONString(checkSqlMap));
+                LOG.debug("FORMAT_SQL_MAP: " + JSONObject.toJSONString(formatSqlMap));
+            }
+            printCheckSql2Excel(filePath.substring(0, filePath.lastIndexOf("\\")) + File.separator
+                    + "CheckSql_" + StringUtils.removeEnd(outF.getName(), ".sql") +".xlsx",
+                    tableNameList, formatSqlMap, checkSqlMap);
+        } catch (Exception e) {
+            LOG.error("检查脚本文件生成失败：", e);
+        }
+        LOG.error("检查脚本生成结束……");
     }
 
     private static void printCheckSql2Excel(String filePath, List<String> tableNameList,
@@ -193,7 +253,7 @@ public class Excel2SqlParser {
         try (OutputStream outputStream = new FileOutputStream(filePath)) {
             checkExcelWorkBook.write(outputStream);
         } catch (Exception e) {
-            log.error("保存检查脚本异常：", e);
+            LOG.error("保存检查脚本异常：", e);
         }
     }
 
@@ -224,7 +284,7 @@ public class Excel2SqlParser {
 
             // 除了标题啥都没有
             if (rowNum <= 1) {
-                log.error("sheet:" + sheet.getSheetName() + ", 行数 <= 1");
+                LOG.error("sheet:" + sheet.getSheetName() + ", 行数 <= 1");
                 continue;
             }
             // 标题（列名）
@@ -244,7 +304,7 @@ public class Excel2SqlParser {
 
                     // 不可能哪个表只有1列吧？？？
                     if (cellNum <= 1) {
-                        log.error("sheet:" + sheet.getSheetName() + ", title异常，数据过滤");
+                        LOG.error("sheet:" + sheet.getSheetName() + ", title异常，数据过滤");
                         break;
                     }
                     columnList = new ArrayList<>(cellNum);
@@ -255,7 +315,7 @@ public class Excel2SqlParser {
                         String column = String.valueOf(getCellValue(row.getCell(j))).toUpperCase();
 
                         if (StringUtils.isBlank(column) || column.startsWith("$")) {
-                            log.error("sheet:" + sheet.getSheetName() + ", title数据错误，请检查");
+                            LOG.error("sheet:" + sheet.getSheetName() + ", title数据错误，请检查");
                             columnList = null;
                             break;
                         }
@@ -268,7 +328,7 @@ public class Excel2SqlParser {
                     }
                 } else {
                     if (null == columnList || columnList.size() <= 0 || primaryKeyList.size() <= 0) {
-                        log.error("sheet:" + sheet.getSheetName() + ", 未获取到列名/主键，过滤当前sheet数据，请检查");
+                        LOG.error("sheet:" + sheet.getSheetName() + ", 未获取到列名/主键，过滤当前sheet数据，请检查");
                         continue;
                     }
                     // 数据
@@ -290,12 +350,12 @@ public class Excel2SqlParser {
                 primaryKeyMap.put(sheet.getSheetName(), primaryKeyList);
                 tableNameList.add(sheet.getSheetName());
                 tableMap.put(sheet.getSheetName().toUpperCase(), sheetList);
-                if (log.isInfoEnabled()) {
-                    log.info("------------------------------------------------------------------");
-                    log.info(sheet.getSheetName() + "获取主键数：" + primaryKeyList.size());
-                    log.info(sheet.getSheetName() + "获取列数：" + columnList.size());
-                    log.info(sheet.getSheetName() + "获取数据数：" + sheetList.size());
-                    log.info("------------------------------------------------------------------");
+                if (LOG.isInfoEnabled()) {
+                    LOG.info("------------------------------------------------------------------");
+                    LOG.info(sheet.getSheetName() + "获取主键数：" + primaryKeyList.size());
+                    LOG.info(sheet.getSheetName() + "获取列数：" + columnList.size());
+                    LOG.info(sheet.getSheetName() + "获取数据数：" + sheetList.size());
+                    LOG.info("------------------------------------------------------------------");
                 }
             }
         }

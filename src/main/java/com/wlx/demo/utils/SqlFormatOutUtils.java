@@ -15,9 +15,9 @@ import java.util.Map;
  * @author weilx
  */
 public class SqlFormatOutUtils {
-    private final static String INSERT_INTO = "INSERT INTO";
+    public final static String INSERT_INTO = "INSERT INTO";
     private final static String VALUES = "VALUES";
-    private final static String DELETE_FROM = "DELETE FROM";
+    public final static String DELETE_FROM = "DELETE FROM";
     private final static String WHERE = "WHERE";
     private final static String AND = "AND";
     private final static String SYSDATE = "SYSDATE";
@@ -47,7 +47,7 @@ public class SqlFormatOutUtils {
 
     private static String DEFAULT_SCHEMA = "PRODUCT";
     private static String LAST_WHERE_SQL = "";
-    public static String CHECK_NUMBER_STRING = "#{NUMBER}";
+    public static final String CHECK_NUMBER_STRING = "#{NUMBER}";
 
     /**
      * 拼装检查SQL
@@ -68,22 +68,33 @@ public class SqlFormatOutUtils {
         if (StringUtils.isBlank(schema)) {
             schema = DEFAULT_SCHEMA;
         }
-        StringBuilder sql = new StringBuilder(SELECT).append(BLANK).append(DECODE).append(LEFT_PARENTHESES)
-                .append(LEFT_PARENTHESES).append(SELECT).append(BLANK).append(COUNT).append(LEFT_PARENTHESES)
-                .append(ASTERISK).append(RIGHT_PARENTHESES).append(BLANK).append(FROM).append(BLANK).append(schema)
-                .append(POINT).append(tableName).append(BLANK).append(WHERE).append(BLANK);
+        StringBuilder sql = new StringBuilder(SELECT).append(BLANK)
+                // 稽核结果
+                .append(DECODE).append(LEFT_PARENTHESES).append(LEFT_PARENTHESES)
+                .append(SELECT).append(BLANK)
+                .append(COUNT).append(LEFT_PARENTHESES).append(ASTERISK).append(RIGHT_PARENTHESES)
+                .append(BLANK).append(FROM).append(BLANK).append(schema).append(POINT).append(tableName)
+                .append(BLANK).append(WHERE).append(BLANK);
         StringBuilder where = getWhereSql(primaryKeys, valueMap);
 
         if (StringUtils.isBlank(where.toString())) {
             throw new IllegalArgumentException("primary key is invalid");
         }
+        // 处理SQL单引号
+        String convertWhere = where.toString().replaceAll(SINGLE_QUOTATION_MARKS, "''");
         sql.append(where).append(RIGHT_PARENTHESES).append(COMMA).append(CHECK_NUMBER_STRING).append(COMMA)
                 .append("'正确'").append(COMMA).append("'错误'").append(RIGHT_PARENTHESES).append(BLANK)
-                .append(AS).append(BLANK).append("稽核结果").append(COMMA).append(SINGLE_QUOTATION_MARKS)
-                .append(where).append(SINGLE_QUOTATION_MARKS).append(BLANK).append(AS).append(BLANK)
-                .append("'条件'").append(COMMA).append(SINGLE_QUOTATION_MARKS).append(remark)
-                .append(SINGLE_QUOTATION_MARKS).append(BLANK).append(AS).append(BLANK).append("需求编码")
-                .append(BLANK).append(FROM).append(BLANK).append(DUAL).append(SEMICOLON).append(LINE_BREAK);
+                .append(AS).append(BLANK).append("稽核结果").append(COMMA)
+                // 表名
+                .append(SINGLE_QUOTATION_MARKS).append(schema).append(POINT).append(tableName).append(SINGLE_QUOTATION_MARKS)
+                .append(BLANK).append(AS).append(BLANK).append("表").append(COMMA)
+                // 条件
+                .append(SINGLE_QUOTATION_MARKS).append(convertWhere).append(SINGLE_QUOTATION_MARKS)
+                .append(BLANK).append(AS).append(BLANK).append("条件").append(COMMA)
+                // 需求编码
+                .append(SINGLE_QUOTATION_MARKS).append(remark).append(SINGLE_QUOTATION_MARKS)
+                .append(BLANK).append(AS).append(BLANK).append("需求编码")
+                .append(BLANK).append(FROM).append(BLANK).append(DUAL).append(SEMICOLON);
 
         return sql.toString();
     }
