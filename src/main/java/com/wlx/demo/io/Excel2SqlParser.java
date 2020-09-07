@@ -63,8 +63,7 @@ public class Excel2SqlParser {
         }
 
         LOG.error(JSONObject.toJSONString(tableMap));
-        print2File(filePath.substring(0, filePath.lastIndexOf("\\")) + File.separator
-                + "ExcelExport_" + StringUtils.removeEnd(f.getName(), ".xlsx") +".sql",
+        print2File(StringUtils.removeEnd(filePath, ".xlsx") + "-SQL.sql",
                 tableNameList, schema, primaryKeyMap, columnMap, tableMap, remark);
     }
 
@@ -181,8 +180,7 @@ public class Excel2SqlParser {
                 LOG.debug("CHECK_SQL_MAP: " + JSONObject.toJSONString(checkSqlMap));
                 LOG.debug("FORMAT_SQL_MAP: " + JSONObject.toJSONString(formatSqlMap));
             }
-            printCheckSql2Excel(filePath.substring(0, filePath.lastIndexOf("\\")) + File.separator
-                    + "CheckSql_" + StringUtils.removeEnd(outF.getName(), ".sql") +".xlsx",
+            printCheckSql2Excel(StringUtils.removeEnd(filePath, "SQL.sql") + "CHECK.xlsx",
                     formatSqlMap, checkSqlMap);
         } catch (Exception e) {
             LOG.error("检查脚本文件生成失败：", e);
