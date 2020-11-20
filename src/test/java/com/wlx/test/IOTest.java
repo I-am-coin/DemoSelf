@@ -6,7 +6,10 @@ import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 public class IOTest {
@@ -14,7 +17,7 @@ public class IOTest {
 
     @Test
     public void testExcel2Sql() throws Exception {
-        Excel2SqlParser.parseSql("E:\\AppData\\TortoiseSVN\\04-解决方案\\2020年\\2020-091\\PCE配置.xlsx", "CRM_BJ_REQ_20200818_0009@weilx");
+        Excel2SqlParser.parseSql("E:\\AppData\\TortoiseSVN\\04-解决方案\\2020年\\2020-111\\配置\\集团配置.xlsx", "CRM_BJ_REQ_20201027_0019@weilx");
     }
 
     @Test
@@ -49,5 +52,14 @@ public class IOTest {
         log.info(numberFormat.format((Object)654321234567890.0));
         log.info(numberFormat.format((Object)654321234567891.0));
         log.info(numberFormat.format((Object) 654321234567891.1));
+    }
+
+    @Test
+    public void testString() throws Exception {
+        String str = "2021-00-01";
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        Timestamp timestamp = new Timestamp(format.parse(str).getTime());
+
+        System.out.println(timestamp);
     }
 }

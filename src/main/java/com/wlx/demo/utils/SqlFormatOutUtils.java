@@ -174,12 +174,12 @@ public class SqlFormatOutUtils {
             where.append(pKey.toUpperCase());
 
             if (valueMap.get(pKey) == null) {
-                where.append("IS NULL");
+                where.append(" IS NULL");
             } else {
                 String formatValue = getFormatValue(valueMap.get(pKey));
 
                 if ("NULL".equalsIgnoreCase(formatValue)) {
-                    where.append("IS NULL");
+                    where.append(" IS NULL");
                 } else {
                     where.append(EQUALS).append(formatValue);
                 }

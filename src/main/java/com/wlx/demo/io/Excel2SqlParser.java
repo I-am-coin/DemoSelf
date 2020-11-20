@@ -331,18 +331,28 @@ public class Excel2SqlParser {
                 } else {
                     if (null == columnList || columnList.size() <= 0 || primaryKeyList.size() <= 0) {
                         LOG.error("sheet:" + sheet.getSheetName() + ", 未获取到列名/主键，过滤当前sheet数据，请检查");
-                        continue;
+                        break;
                     }
                     // 数据
                     Map<String, Object> rowMap = new HashMap<>(rowNum);
                     // 偏移 offset 个单元格
                     int length = columnList.size() + offset;
+                    int size = length;
 
                     for (int j = offset; j < length; j++) {
                         if (null == row.getCell(j)) {
                             continue;
                         }
-                        rowMap.put(columnList.get(j), getCellValue(row.getCell(j)));
+                        Object object = getCellValue(row.getCell(j));
+
+                        if (null == object || (object instanceof String && (StringUtils.isBlank((String)object) || "$NA".equals(object)))) {
+                            size --;
+                        }
+                        rowMap.put(columnList.get(j), object);
+                    }
+                    if (size == 0) {
+                        LOG.error("sheet:" + sheet.getSheetName() + ", " + rowNum + "行数据为空，结束后续处理");
+                        break;
                     }
                     sheetList.add(rowMap);
                 }
