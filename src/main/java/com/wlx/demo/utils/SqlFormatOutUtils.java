@@ -47,6 +47,7 @@ public class SqlFormatOutUtils {
 
     private static String DEFAULT_SCHEMA = "PRODUCT";
     private static String LAST_WHERE_SQL = "";
+    private static String LAST_SCHEMA = "";
     public static final String CHECK_NUMBER_STRING = "#{NUMBER}";
 
     /**
@@ -126,14 +127,15 @@ public class SqlFormatOutUtils {
         if (StringUtils.isBlank(where.toString())) {
             throw new IllegalArgumentException("primary key is invalid");
         }
-        // 判断WHERE条件是否与上一条相同，是则忽略本条DELETE语句
-        if (LAST_WHERE_SQL.equals(where.toString())) {
+        // 判断WHERE条件是否与上一条相同，是则忽略本条DELETE语句, 添加schema
+        if (LAST_WHERE_SQL.equals(where.toString()) && LAST_SCHEMA.equals(schema)) {
             sql = new StringBuilder();
         } else {
             // DELETE 语句结束
             sql.append(where).append(SEMICOLON).append(LINE_BREAK);
         }
         LAST_WHERE_SQL = where.toString();
+        LAST_SCHEMA = schema;
         // INSERT 语句开始
         sql.append(INSERT_INTO).append(BLANK).append(schema).append(POINT).append(tableName).append(LEFT_PARENTHESES);
         StringBuilder column = new StringBuilder();
@@ -202,6 +204,9 @@ public class SqlFormatOutUtils {
         }
         if (o instanceof Number) {
             return SINGLE_QUOTATION_MARKS + NUMBER_FORMAT.format(o) + SINGLE_QUOTATION_MARKS;
+        }
+        if (StringUtils.isBlank(o.toString())) {
+            return "NULL";
         }
         String sValue = SINGLE_QUOTATION_MARKS + o.toString() + SINGLE_QUOTATION_MARKS;
 

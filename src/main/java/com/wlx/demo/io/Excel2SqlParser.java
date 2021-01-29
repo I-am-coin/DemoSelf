@@ -62,7 +62,9 @@ public class Excel2SqlParser {
             return;
         }
 
-        LOG.error(JSONObject.toJSONString(tableMap));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(JSONObject.toJSONString(tableMap));
+        }
         print2File(StringUtils.removeEnd(filePath, ".xlsx") + "-SQL.sql",
                 tableNameList, schema, primaryKeyMap, columnMap, tableMap, remark);
     }
