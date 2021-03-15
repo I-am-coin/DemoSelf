@@ -128,14 +128,14 @@ public class SqlFormatOutUtils {
             throw new IllegalArgumentException("primary key is invalid");
         }
         // 判断WHERE条件是否与上一条相同，是则忽略本条DELETE语句, 添加schema
-        if (LAST_WHERE_SQL.equals(where.toString()) && LAST_SCHEMA.equals(schema)) {
+        if (LAST_WHERE_SQL.equals(where.toString()) && LAST_SCHEMA.equals(schema+ tableName)) {
             sql = new StringBuilder();
         } else {
             // DELETE 语句结束
             sql.append(where).append(SEMICOLON).append(LINE_BREAK);
         }
         LAST_WHERE_SQL = where.toString();
-        LAST_SCHEMA = schema;
+        LAST_SCHEMA = schema + tableName;
         // INSERT 语句开始
         sql.append(INSERT_INTO).append(BLANK).append(schema).append(POINT).append(tableName).append(LEFT_PARENTHESES);
         StringBuilder column = new StringBuilder();
@@ -208,14 +208,16 @@ public class SqlFormatOutUtils {
         if (StringUtils.isBlank(o.toString())) {
             return "NULL";
         }
-        String sValue = SINGLE_QUOTATION_MARKS + o.toString() + SINGLE_QUOTATION_MARKS;
+        String sValue = o.toString();
 
         // 部分符号特殊处理
+        if (sValue.contains("'")) {
+            sValue = sValue.replaceAll("'", "''");
+        }
         if (sValue.contains("&")) {
             sValue = sValue.replaceAll("&", "'||'&'||'");
         }
-
-        return sValue;
+        return SINGLE_QUOTATION_MARKS + sValue + SINGLE_QUOTATION_MARKS;
     }
 
     public static String getDefaultSchema() {
