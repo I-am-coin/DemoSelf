@@ -89,10 +89,11 @@ public class Excel2SqlParser {
                     LOG.error("表名为空！");
                     continue;
                 }
+                String newSchema = schema;
                 String tableName = fullTableName;
 
                 if (fullTableName.contains(".")) {
-                    schema = fullTableName.substring(0, fullTableName.indexOf("."));
+                    newSchema = fullTableName.substring(0, fullTableName.indexOf("."));
                     tableName = fullTableName.substring(fullTableName.indexOf(".") + 1, fullTableName.length());
                 }
                 // 一个表的数据
@@ -114,12 +115,12 @@ public class Excel2SqlParser {
                     LOG.error(tableName + " 未获取到列！");
                     continue;
                 }
-                bw.write("-- " + schema + "."+ tableName);
+                bw.write("-- " + newSchema + "."+ tableName);
                 bw.newLine();
                 // 遍历保存表数据
                 for (Map<String, Object> tableData : tableList) {
                     // 拼接SQL
-                    String sql = SqlFormatOutUtils.format2DeleteInsertSql(schema, tableName,
+                    String sql = SqlFormatOutUtils.format2DeleteInsertSql(newSchema, tableName,
                             primaryKeys.toArray(new String[0]), columns.toArray(new String[0]), tableData);
 
                     // 如果 sql 包含 DELETE FROM 语句，则生成检查语句，否则 record++
@@ -135,14 +136,14 @@ public class Excel2SqlParser {
                             record = 1;
                         }
                         // 如果是新的一个表，则将 checkSqlList 放入
-                        if (StringUtils.isNotBlank(lastTableName) && !StringUtils.equals(lastTableName, schema + SqlFormatOutUtils.POINT + tableName)) {
+                        if (StringUtils.isNotBlank(lastTableName) && !StringUtils.equals(lastTableName, newSchema + SqlFormatOutUtils.POINT + tableName)) {
                             checkSqlMap.put(lastTableName, checkSqlList);
                             formatSqlMap.put(lastTableName, formatSqlList);
                             formatSqlList = new ArrayList<>();
                             checkSqlList = new ArrayList<>();
                         }
                         // 生成检查脚本
-                        String checkSql = SqlFormatOutUtils.formatCheckSql(schema, tableName,
+                        String checkSql = SqlFormatOutUtils.formatCheckSql(newSchema, tableName,
                                 primaryKeys.toArray(new String[0]), tableData, remark);
                         checkSqlList.add(StringUtils.removeEnd(checkSql, SqlFormatOutUtils.SEMICOLON)
                                 + SqlFormatOutUtils.BLANK + SqlFormatOutUtils.UNION
@@ -151,7 +152,7 @@ public class Excel2SqlParser {
                         record++;
                     }
                     sqlBuilder.append(sql).append(SqlFormatOutUtils.LINE_BREAK);
-                    lastTableName = schema + SqlFormatOutUtils.POINT + tableName;
+                    lastTableName = newSchema + SqlFormatOutUtils.POINT + tableName;
                     if (LOG.isDebugEnabled()) {
                         LOG.debug(sql);
                     }

@@ -19,7 +19,8 @@ public class IOTest {
 
     @Test
     public void testExcel2Sql() throws Exception {
-        Excel2SqlParser.parseSql("E:\\AppData\\TortoiseSVN\\04-解决方案\\2021年\\01-4\\配置\\集团配置.xlsx", "CRM_BJ_REQ_20201215_57074@weilx");
+        Excel2SqlParser.parseSql("E:\\AppData\\TortoiseSVN\\04-解决方案\\2021年\\03-1\\配置\\PCE配置.xlsx",
+                "CRM_BJ_REQ_20200623_0022@weilx");
     }
 
     @Test
