@@ -12,13 +12,13 @@ import java.util.*;
  */
 public class CountIsland {
     public static void main(String[] args) {
-        String json = "[['1','1','0','0','0'],['1','1','0','0','0'],['0','0','1','0','0'],['0','0','0','1','1']]";
+        String json = "[['1','1','1'],['0','1','0'],['1','1','1']]";
         char[][] grid = JSONObject.parseObject(json, char[][].class);
-        int numIslands = new Solution().numIslands(grid);
+        int numIslands = new DFSSolution().numIslands(grid);
         System.out.println(numIslands);
     }
 
-    static class Solution {
+    static class BDFSolution {
         private static final char LAND = '1';
         private static final int[][] DIRECTIONS = new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
@@ -100,6 +100,51 @@ public class CountIsland {
 
                 return Objects.hash(getX(), getY());
             }
+        }
+    }
+
+    static class DFSSolution {
+        public int numIslands(char[][] grid) {
+            if (null == grid) {
+                return 0;
+            }
+            int m = grid.length;
+            int n = grid[0].length;
+            int num = 0;
+
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (grid[i][j] == '1') {
+                        grid[i][j] = '0';
+                        dfs(i, j, grid);
+                        num++;
+                    }
+                }
+            }
+            return num;
+        }
+
+        private boolean dfs(int x, int y, char[][] grid) {
+            int m = grid.length;
+            int n = grid[0].length;
+
+            if (x + 1 < m && grid[x + 1][y] != '0') {
+                grid[x + 1][y] = '0';
+                if (dfs(x + 1, y, grid)) return true;
+            }
+            if (y + 1 < n && grid[x][y + 1] != '0') {
+                grid[x][y + 1] = '0';
+                if (dfs(x, y + 1, grid)) return true;
+            }
+            if (x - 1 >= 0 && grid[x - 1][y] != '0') {
+                grid[x - 1][y] = '0';
+                if (dfs(x - 1, y, grid)) return true;
+            }
+            if (y - 1 >= 0 && grid[x][y - 1] != '0') {
+                grid[x][y - 1] = '0';
+                if (dfs(x, y - 1, grid)) return true;
+            }
+            return false;
         }
     }
 }
