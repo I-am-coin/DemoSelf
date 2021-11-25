@@ -1,8 +1,5 @@
 package com.wlx.demo.datastructure.queue;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -18,7 +15,6 @@ import java.util.Set;
  * @author weilx
  */
 public class CircleLock {
-    private static final Log LOG = LogFactory.getLog(CircleLock.class);
 
     public static void main(String[] args) {
         String[] deadends = {"0201","0101","0102","1212","2002"};

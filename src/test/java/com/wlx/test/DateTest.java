@@ -4,6 +4,8 @@ import org.junit.Test;
 
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DateTest {
 
@@ -20,5 +22,17 @@ public class DateTest {
         System.out.println(sqlTime);
         System.out.println(sqlDate);
         System.out.println(sqlDate.after(sqlTime)); // ERROR
+    }
+
+    @Test
+    public void testRegex() {
+        String regex = "\\[[a-zA-Z]+]";
+        Pattern p = Pattern.compile(regex);
+        Matcher matcher = p.matcher("anb1[adad]ada[ge]omd[gawe[awg]]");
+
+        while (matcher.find()) {
+
+            System.out.println(matcher.group());
+        }
     }
 }

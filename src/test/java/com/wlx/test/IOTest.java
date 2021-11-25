@@ -10,9 +10,9 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Random;
+import java.util.*;
+
+import static java.lang.System.out;
 
 public class IOTest {
     private transient final static Logger log = LogManager.getLogger(IOTest.class);
@@ -71,6 +71,21 @@ public class IOTest {
     }
 
     @Test
+    public void testBigDecimalCalculate() throws Exception {
+        BigDecimal bigDecimal = new BigDecimal(12345);
+        BigDecimal bigDecimal1 = new BigDecimal(54312);
+        BigDecimal bigDecimal2 = new BigDecimal(43);
+
+        log.info(bigDecimal);
+        log.info(bigDecimal1);
+        log.info(bigDecimal2);
+
+        log.info(bigDecimal + " X " + bigDecimal1 + " = " + bigDecimal.multiply(bigDecimal1));
+//        log.info("NO " + bigDecimal1 + " ÷ " + bigDecimal2 + " = " + bigDecimal1.divide(bigDecimal2)); // error
+        log.info(bigDecimal1 + " ÷ " + bigDecimal2 + " = " + bigDecimal1.divide(bigDecimal2, 2, BigDecimal.ROUND_HALF_UP));
+    }
+
+    @Test
     public void testRandom() throws Exception {
 
         for (int i=1; i<=10000; i++) {
@@ -79,5 +94,10 @@ public class IOTest {
 
             System.out.println(String.format("第%05d次随机，值 = %d", i, random));
         }
+    }
+
+    @Test
+    public void testObject() throws Exception {
+        out.println(new String(new byte[]{103, 101, 116, 32}));
     }
 }
